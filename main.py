@@ -22,6 +22,10 @@ def main():
         st.write("### Data from CSV file:")
         st.write(df)
 
+        # Display table schema (column names and data types)
+        st.write("### Table Schema:")
+        st.write(df.dtypes)
+
         # Create SQLite in-memory database and table from uploaded CSV data
         conn = sqlite3.connect(":memory:")
         table_name = "data_table"
