@@ -54,58 +54,59 @@ with tab2:
 with tab1:
     upload_file = st.file_uploader('Upload dataset (CSV):', type=['.csv'], accept_multiple_files=False)
 
-    if upload_file is not None:
-        # Load CSV file into DataFrame
-        df = pd.read_csv(upload_file)
+    while upload_file is None:
+        st.stop()
 
-        # Display table name
-        st.text(f'Table Name: {upload_file.name.split(".")[0]}')
+    if 'conn' not in st.session_state:
+        st.session_state.conn = sqlite3.connect(':memory:', check_same_thread=False)
 
-        timer_start = time.perf_counter()
+    with st.container():
+        if upload_file is not None:
+            # Load CSV file into DataFrame
+            df = pd.read_csv(upload_file)
 
-        # display dataframe and stats
-        ms_elapsed = int((time.perf_counter() - timer_start) * 1000)
-        cols = st.columns(3)
-        cols[0].text(f'Exec time: {ms_elapsed}ms')
-        cols[1].text(f'Last Query: {time.strftime("%X")}')
-        cols[2].text(f'Shape: {df.shape}')
+            # Display table name
+            st.text(f'Table Name: {upload_file.name.split(".")[0]}')
 
-        if df.columns.has_duplicates:
-            rename_duplicate_cols(df)
-        st.dataframe(df)
+            timer_start = time.perf_counter()
 
-        # save query and stats for query-history tab
-        if len(queries) == 0 or (len(queries) > 0 and upload_file.name != queries[-1]['query']):
-            queries.append({'time': time.strftime("%X"), 'query': upload_file.name,
-                            'exec_time_ms': ms_elapsed, 'shape': df.shape})
+            # display dataframe and stats
+            ms_elapsed = int((time.perf_counter() - timer_start) * 1000)
+            cols = st.columns(3)
+            cols[0].text(f'Exec time: {ms_elapsed}ms')
+            cols[1].text(f'Last Query: {time.strftime("%X")}')
+            cols[2].text(f'Shape: {df.shape}')
 
-        # a "wrapper-button" is created, so only if the user clicks "Save data to..."
-        # then it will process and create the file to download
-        file_name = f'streamlit_{upload_file.name.split(".")[0]}.csv'
-        download_data = st.button('Save data to CSV')
-        if download_data:
-            st.download_button(label=file_name, data=df.to_csv(index=False).encode('utf-8'),
-                               file_name=file_name, mime='text/csv')
+            if df.columns.has_duplicates:
+                rename_duplicate_cols(df)
+            st.dataframe(df)
 
-    # Text area for SQL queries
-    query = st.text_area(
-        label='SQL Query',
-        value=f'SELECT * FROM {upload_file.name.split(".")[0]}' if upload_file else 'SELECT * FROM table',
-        height=160,
-        key='query',
-        help='All queries are executed by the SQLite3 engine. Drag the bottom right corner to expand the window'
-    )
+            # save query and stats for query-history tab
+            if len(queries) == 0 or (len(queries) > 0 and upload_file.name != queries[-1]['query']):
+                queries.append({'time': time.strftime("%X"), 'query': upload_file.name,
+                                'exec_time_ms': ms_elapsed, 'shape': df.shape})
 
-    if query and upload_file:
-        try:
-            # Connect to SQLite database
-            conn = sqlite3.connect(':memory:', check_same_thread=False)
-            
-            # Execute SQL query
-            result_df = pd.read_sql_query(query, conn)
-            st.dataframe(result_df)
-            
-        except Exception as e:
-            st.warning(e)
-        finally:
-            conn.close()
+            # a "wrapper-button" is created, so only if the user clicks "Save data to..."
+            # then it will process and create the file to download
+            file_name = f'streamlit_{upload_file.name.split(".")[0]}.csv'
+            download_data = st.button('Save data to CSV')
+            if download_data:
+                st.download_button(label=file_name, data=df.to_csv(index=False).encode('utf-8'),
+                                   file_name=file_name, mime='text/csv')
+
+        # Text area for SQL queries
+        query = st.text_area(
+            label='SQL Query',
+            value='',  # Default empty query
+            height=160,
+            key='query',
+            help='All queries are executed by the SQLite3 engine. Drag the bottom right corner to expand the window'
+        )
+
+        if query:
+            try:
+                # Execute the SQL query using the SQLite connection
+                result_df = pd.read_sql_query(query, st.session_state.conn)
+                st.dataframe(result_df)
+            except Exception as e:
+                st.warning(e)
