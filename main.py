@@ -62,7 +62,11 @@ with tab1:
 
     with st.container():
         if upload_file is not None:
+            # Load CSV file into DataFrame
             df = pd.read_csv(upload_file)
+
+            # Display table name
+            st.text(f'Table Name: {upload_file.name.split(".")[0]}')
 
             timer_start = time.perf_counter()
 
@@ -93,7 +97,7 @@ with tab1:
         # Text area for SQL queries
         query = st.text_area(
             label='SQL Query',
-            value='SELECT * FROM table',
+            value=f'SELECT * FROM {upload_file.name.split(".")[0]}',  # Default query with table name
             height=160,
             key='query',
             help='All queries are executed by the SQLite3 engine. Drag the bottom right corner to expand the window'
