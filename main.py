@@ -24,7 +24,8 @@ def main():
 
         # Create SQLite in-memory database and table from uploaded CSV data
         conn = sqlite3.connect(":memory:")
-        df.to_sql("data", conn, index=False)
+        table_name = "data_table"
+        df.to_sql(table_name, conn, index=False)
 
         # Text area for SQL queries
         st.write("### SQL Query Executor:")
@@ -33,6 +34,8 @@ def main():
         # Button to execute SQL query
         if st.button("Execute Query"):
             if sql_query.strip() != "":
+                # Dynamically replace "table" with actual table name in SQL query
+                sql_query = sql_query.replace("table", table_name)
                 result_df = execute_query(sql_query, conn)
                 if result_df is not None:
                     st.write("### Query Result:")
