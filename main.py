@@ -11,7 +11,7 @@ def execute_query(sql_query, conn):
         st.error(f"Error executing SQL query: {e}")
 
 def main():
-    st.title("CSV File Explorer and SQL Query Executor")
+    st.title("SQL Query Executor")
 
     # File uploader for CSV files
     uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
